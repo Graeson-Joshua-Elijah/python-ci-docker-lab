@@ -54,7 +54,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/python-ci-lab
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/github-actions-ci
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=sha,prefix=sha-,format=short
@@ -99,5 +99,5 @@ jobs:
       - name: Post-build summary
         run: |
           echo "✅ Build and push complete!"
-          echo "Pushed image: ${{ secrets.DOCKERHUB_USERNAME }}/python-ci-lab"
+          echo "Pushed image: ${{ secrets.DOCKERHUB_USERNAME }}/github-actions-ci"
           echo "Tags used: ${{ steps.meta.outputs.tags }}"
