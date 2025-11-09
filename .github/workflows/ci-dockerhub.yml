@@ -44,7 +44,8 @@ jobs:
       # 4️⃣ Run tests with pytest
       # ---------------------------------------
       - name: Run tests
-        run: pytest -q
+        run: |
+          PYTHONPATH=. pytest -q
 
       # ---------------------------------------
       # 5️⃣ Extract Docker metadata (tags & labels)
