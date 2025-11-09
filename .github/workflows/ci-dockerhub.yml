@@ -1,33 +1,54 @@
-# .github/workflows/ci-dockerhub.yml
-name: ci-dockerhub
+# ============================================================
+# File: .github/workflows/ci-dockerhub.yml
+# Purpose: Build, test, and push Docker image to Docker Hub
+# ============================================================
+
+name: CI to Docker Hub
 
 on:
   push:
-    branches: [ "main" ]
-    tags: [ "v*" ]
+    branches: [ "main" ]          # Trigger on pushes to main
+    tags: [ "v*" ]                # Also trigger on version tags like v1.0.0
   pull_request:
     branches: [ "main" ]
 
 jobs:
   build-test-push:
+    name: Build, Test & Push
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      # ---------------------------------------
+      # 1️⃣ Checkout repository
+      # ---------------------------------------
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      # ---------------------------------------
+      # 2️⃣ Set up Python
+      # ---------------------------------------
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
-      - name: Install deps
+      # ---------------------------------------
+      # 3️⃣ Install dependencies
+      # ---------------------------------------
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # ---------------------------------------
+      # 4️⃣ Run tests with pytest
+      # ---------------------------------------
       - name: Run tests
         run: pytest -q
 
+      # ---------------------------------------
+      # 5️⃣ Extract Docker metadata (tags & labels)
+      # ---------------------------------------
       - name: Docker metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -38,23 +59,44 @@ jobs:
             type=sha,prefix=sha-,format=short
             type=ref,event=tag
 
+      # ---------------------------------------
+      # 6️⃣ Set up QEMU (multi-arch support)
+      # ---------------------------------------
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
+      # ---------------------------------------
+      # 7️⃣ Set up Docker Buildx (for build cache and platforms)
+      # ---------------------------------------
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to Docker Hub
+      # ---------------------------------------
+      # 8️⃣ Log in to Docker Hub using GitHub Secrets
+      # ---------------------------------------
+      - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push
+      # ---------------------------------------
+      # 9️⃣ Build and push Docker image
+      # ---------------------------------------
+      - name: Build and push image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
+          platforms: linux/amd64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64
+
+      # ---------------------------------------
+      # 🔟 Optional: Print success message
+      # ---------------------------------------
+      - name: Post-build summary
+        run: |
+          echo "✅ Build and push complete!"
+          echo "Pushed image: ${{ secrets.DOCKERHUB_USERNAME }}/python-ci-lab"
+          echo "Tags used: ${{ steps.meta.outputs.tags }}"
